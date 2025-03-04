@@ -1,4 +1,4 @@
-torch~=2.6.0+cu126
+torch
 uvicorn~=0.34.0
 fastapi~=0.115.11
 pydantic~=2.10.6
