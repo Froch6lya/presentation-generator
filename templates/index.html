@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Генератор презентаций</title>
+  <style>
+    /* Общие стили */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    .example-text {
+      color: #888;
+      font-size: 0.8rem;
+      text-align: left;
+      margin: 5px 0 10px;
+      font-style: italic;
+    }
+
+    /* Тёмный фон */
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #121212;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    /* Контейнер формы */
+    .container {
+      background: #1e1e1e;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    /* Заголовок */
+    h1 {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    /* Стили для меток */
+    label {
+      display: block;
+      margin: 10px 0 5px;
+      font-weight: bold;
+      text-align: left;
+    }
+
+    /* Стили для полей ввода и селекта */
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      font-size: 1rem;
+      border-radius: 5px;
+      border: none;
+      outline: none;
+    }
+
+    input, select {
+      background: #2a2a2a;
+      color: #fff;
+      border: 1px solid #444;
+    }
+
+    /* Стили для кнопки */
+    button {
+      background: #6200ea;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background: #3700b3;
+    }
+
+    /* Сообщение об ошибке */
+    #message {
+      margin-top: 1rem;
+      color: #ff5252;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Генератор презентаций</h1>
+
+    <form id="presentationForm">
+      <label for="topic">Тема презентации</label>
+      <input
+        type="text"
+        id="topic"
+        name="topic"
+        placeholder="Напишите тему презентации"
+        required
+      />
+
+      <div class="example-text">Например: "Искусственный интеллект в медицине 2024"</div>
+
+      <label for="theme">Выберите шаблон</label>
+      <select id="theme" name="theme">
+        <option value="light">Светлая тема</option>
+        <option value="dark">Тёмная тема</option>
+      </select>
+
+      <label for="slidesCount">Количество слайдов</label>
+      <input
+        type="number"
+        id="slidesCount"
+        name="slidesCount"
+        min="1"
+        max="30"
+        value="5"
+        required
+      />
+
+      <button type="submit">Сгенерировать презентацию</button>
+    </form>
+
+    <div id="message"></div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
