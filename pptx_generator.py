@@ -1,9 +1,8 @@
 import io
 import os
+import random
 
 from pptx import Presentation
-from pptx.util import Inches, Pt
-from pptx.enum.text import PP_ALIGN
 from pydantic import BaseModel
 from text_generator import generate_slide_text
 from image_generaor import generate_slide_image
@@ -17,107 +16,64 @@ class PresentationRequest(BaseModel):
 
 
 def create_presentation(topic: str, slides_count: int, theme: str) -> io.BytesIO:
-    """
-    Создаёт презентацию с заданным количеством слайдов, используя шаблон из папки themes.
-    В зависимости от темы выбирается dark.pptx или light.pptx.
-    На каждом слайде добавляется текст (сгенерированный GPT-2) и изображение (сгенерированное Stable Diffusion)
-    по следующему алгоритму: текст добавляется в левую часть слайда, а изображение – в правую.
-    """
-    # Определяем путь к шаблону
-    theme = theme.lower()
-    if theme == "dark":
+    # Выбор шаблона в зависимости от темы
+    if theme.lower() == "dark":
         template_path = "themes/dark.pptx"
-    else:
+    elif theme.lower() == "light":
         template_path = "themes/light.pptx"
+    else:
+        raise ValueError("Некорректная тема. Используйте 'dark' или 'light'.")
 
-    # Загружаем презентацию из шаблона
     prs = Presentation(template_path)
 
-    # Создание титульного листа
-    slide = prs.slides.add_slide(prs.slide_layouts[1])
-    textbox = slide.shapes.add_textbox(
-        left=Inches(1.5),
-        top=Inches(2.2),
-        width=Inches(10.32),
-        height=Inches(2)
-    )
-    tf = textbox.text_frame
-    tf.auto_size = False
-    tf.word_wrap = True
-    tf.margin_left = Inches(0.2)
-    tf.margin_right = Inches(0.2)
-    tf.margin_top = Inches(0.2)
-    tf.margin_bottom = Inches(0.2)
-    p = tf.add_paragraph()
-    p.text = topic
-    p.font.size = Pt(40)
-    p.alignment = PP_ALIGN.CENTER
+    # Добавляем титульный слайд (макет с индексом 0)
+    title_layout = prs.slide_layouts[0]
+    title_slide = prs.slides.add_slide(title_layout)
+    title_placeholder = title_slide.placeholders[0]
+    title_placeholder.text = topic
 
+    # Допустимые макеты для обычных слайдов: используем макеты с индексами 1, 2, 3
+    allowed_layouts = list(prs.slide_layouts)[1:4]
 
-    for i in range(1, slides_count + 1):
-        # Создаем слайд на основе макета шаблона
-        slide = prs.slides.add_slide(prs.slide_layouts[1])
+    for _ in range(slides_count):
+        layout = random.choice(allowed_layouts)
+        slide = prs.slides.add_slide(layout)
 
-        # Генерация текста для слайда
+        # Генерируем текст для слайда
         slide_text = generate_slide_text(topic)
-        # Промпт для генерации изображения
-        image_prompt = f"{topic} slide {i} illustration"
-        image_path = generate_slide_image(image_prompt)
 
-        # Добавляем текстовое поле
-        textbox = slide.shapes.add_textbox(
-            left=Inches(0.5),
-            top=Inches(0.5),
-            width=Inches(5.5),
-            height=Inches(6)
-        )
+        # Получаем список плейсхолдеров в слайде
+        placeholders = list(slide.placeholders)
 
-        # Получаем текстовый фрейм и настраиваем его свойства
-        tf = textbox.text_frame
-        tf.auto_size = False
-        tf.word_wrap = True
+        # Обработка в зависимости от количества плейсхолдеров
+        if len(placeholders) == 1:
+            # Единственный placeholder используется для текста
+            placeholders[0].text = slide_text
+        elif len(placeholders) == 2:
+            # Первый для заголовка, второй для текста
+            placeholders[0].text = "тут будет заголовок"
+            placeholders[1].text = slide_text
+        elif len(placeholders) >= 3:
+            # Первый для заголовка, второй для текста, третий для изображения
+            placeholders[0].text = "тут будет заголовок"
+            placeholders[1].text = slide_text
+            image_prompt = f"{topic} illustration"
+            image_path = generate_slide_image(image_prompt)
+            try:
+                placeholders[2].insert_picture(image_path)
+            except Exception as e:
+                print(f"Ошибка при вставке изображения: {e}")
 
-        # Устанавливаем фиксированные отступы
-        tf.margin_left = Inches(0.2)
-        tf.margin_right = Inches(0.2)
-        tf.margin_top = Inches(0)
-        tf.margin_bottom = Inches(0.2)
+            # Удаляем временный файл с изображением, если он существует
+            if os.path.exists(image_path):
+                os.remove(image_path)
 
-        # Добавляем абзац с текстом
-        p = tf.add_paragraph()
-        p.text = slide_text
-        p.font.size = Pt(24)
+    # Добавление завершающего слайда
+    title_layout = prs.slide_layouts[0]
+    title_slide = prs.slides.add_slide(title_layout)
+    title_placeholder = title_slide.placeholders[0]
+    title_placeholder.text = "Спасибо за внимание!"
 
-
-        # Добавляем изображение
-        pic_left = Inches(6.16)
-        pic_top = Inches(0.6)
-        pic_width = Inches(6.29)
-        slide.shapes.add_picture(image_path, pic_left, pic_top, width=pic_width)
-
-        # Удаляем временный файл с изображением, если он существует
-        if os.path.exists(image_path):
-            os.remove(image_path)
-    slide = prs.slides.add_slide(prs.slide_layouts[1])
-    textbox = slide.shapes.add_textbox(
-        left=Inches(1.5),
-        top=Inches(2.2),
-        width=Inches(10.32),
-        height=Inches(2)
-    )
-    tf = textbox.text_frame
-    tf.auto_size = False
-    tf.word_wrap = True
-    tf.margin_left = Inches(0.2)
-    tf.margin_right = Inches(0.2)
-    tf.margin_top = Inches(0.2)
-    tf.margin_bottom = Inches(0.2)
-    p = tf.add_paragraph()
-    p.text = "Спасибо за внимание!"
-    p.font.size = Pt(40)
-    p.alignment = PP_ALIGN.CENTER
-
-    # Сохраняем презентацию
     ppt_io = io.BytesIO()
     prs.save(ppt_io)
     ppt_io.seek(0)
